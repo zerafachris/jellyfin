@@ -258,6 +258,10 @@ namespace Jellyfin.Server.Implementations.Users
                     await dbContext.SaveChangesAsync().ConfigureAwait(false);
                 }
             }
+
+            var eventArgs = new UserUpdatedEventArgs(user);
+            await _eventManager.PublishAsync(eventArgs).ConfigureAwait(false);
+            OnUserUpdated?.Invoke(this, eventArgs);
         }
 
         private static void SyncPermissions(User dbUser, ICollection<Permission> source)
@@ -958,6 +962,10 @@ namespace Jellyfin.Server.Implementations.Users
 
                 user.ProfileImage = null;
             }
+
+            var eventArgs = new UserUpdatedEventArgs(user);
+            await _eventManager.PublishAsync(eventArgs).ConfigureAwait(false);
+            OnUserUpdated?.Invoke(this, eventArgs);
         }
 
         internal static void ThrowIfInvalidUsername(string name)

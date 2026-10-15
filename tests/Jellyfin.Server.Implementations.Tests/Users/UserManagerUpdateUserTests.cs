@@ -163,6 +163,38 @@ public sealed class UserManagerUpdateUserTests : IDisposable
         Assert.Equal(reloaded.Permissions.Count, await context.Permissions.CountAsync(TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task UpdateUserAsync_RaisesOnUserUpdated()
+    {
+        var user = await _userManager.CreateUserAsync("updateeventuser");
+
+        User? updated = null;
+        _userManager.OnUserUpdated += (_, e) => updated = e.Argument;
+
+        user.LastActivityDate = DateTime.UtcNow;
+        await _userManager.UpdateUserAsync(user);
+
+        Assert.NotNull(updated);
+        Assert.Equal(user.Id, updated.Id);
+    }
+
+    [Fact]
+    public async Task ClearProfileImageAsync_RaisesOnUserUpdated()
+    {
+        var user = await _userManager.CreateUserAsync("clearimguser");
+        user.ProfileImage = new ImageInfo(Path.Combine(Path.GetTempPath(), "profile.png"));
+        await _userManager.UpdateUserAsync(user);
+
+        User? updated = null;
+        _userManager.OnUserUpdated += (_, e) => updated = e.Argument;
+
+        await _userManager.ClearProfileImageAsync(user);
+
+        Assert.NotNull(updated);
+        Assert.Equal(user.Id, updated.Id);
+        Assert.Null(updated.ProfileImage);
+    }
+
     private JellyfinDbContext CreateDbContext()
     {
         return new JellyfinDbContext(
